@@ -1,9 +1,11 @@
 {
-  "name": "test",
+  "name": "kibana-ci-service",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "kibana-ci-service",
+  "main": "src/index.js",
   "scripts": {
+    "start": "node src/index.js",
+    "watch": "nodemon src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -11,5 +13,8 @@
   "dependencies": {
     "axios": "^0.19.0",
     "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.2"
   }
 }
