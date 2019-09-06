@@ -3,10 +3,12 @@ var app = express();
 
 const getJenkinsStages = require('./lib/getJenkinsStages');
 
-const BASE_URL = 'https://kibana-ci.elastic.co';
-const PORT = 8080;
+const BASE_URL = process.env.BASE_URL || 'https://kibana-ci.elastic.co';
+const PORT = process.env.PORT || 8080;
 
 app.get('/:jobName/:buildNumber', async (req, res, next) => {
+  console.log(`Request for ${req.path}`);
+
   try {
     const data = await getJenkinsStages(BASE_URL, req.params.jobName, req.params.buildNumber);
     res.json(data);
