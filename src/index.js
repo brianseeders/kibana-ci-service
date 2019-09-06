@@ -1,5 +1,5 @@
-var express = require('express');
-var app = express();
+const express = require('express');
+const app = express();
 
 const getJenkinsStages = require('./lib/getJenkinsStages');
 
@@ -25,7 +25,7 @@ app.use(function(err, req, res, next) {
   console.error(err.stack);
 
   res.status(500);
-  let error = ({ message }) => ({ message });
+  const error = ({ message }) => ({ message });
   res.json({ error: error(err) });
 });
 

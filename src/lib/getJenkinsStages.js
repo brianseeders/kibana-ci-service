@@ -1,4 +1,6 @@
 const axios = require('axios');
+const { from, zip } = require('rxjs');
+const { mergeMap, toArray } = require('rxjs/operators');
 
 const getStagesUrl = (baseUrl, jobName, buildNumber) =>
   `${baseUrl}/job/${jobName}/${buildNumber}/api/json?tree=actions[nodes[iconColor,running,displayName,id,parents]]`;
@@ -41,6 +43,10 @@ const getJenkinsStages = async (baseUrl, jobName, buildNumber) => {
         parent.displayName = 'Stage: ' + node.displayName;
       }
     });
+
+    if (node._class === 'org.jenkinsci.plugins.workflow.cps.nodes.StepAtomNode') {
+      node.console = `${baseUrl}/job/${jobName}/${buildNumber}/execution/node/${node.id}/log/?consoleFull`;
+    }
   });
 
   const startNodes = ['org.jenkinsci.plugins.workflow.cps.nodes.StepStartNode', 'org.jenkinsci.plugins.workflow.graph.FlowStartNode'];
@@ -113,18 +119,27 @@ const getJenkinsStages = async (baseUrl, jobName, buildNumber) => {
 
   fixNodes(null, rootNode);
 
-  // TODO make this parallel but with a max number in-flight
-  // for (const node of nodes) {
-  //   if (node.displayName.includes('Shell Script')) {
-  //     const url = getNodeUrl(baseUrl, jobName, buildNumber, node.id);
-  //     const data = (await axios.get(url)).data;
-  //     node.parameterDescription = data.parameterDescription.replace(/#!\/usr\/local\/bin\/runbld\s+/, '');
-  //     node.durationMillis = data.durationMillis;
-  //     node.log = `${baseUrl}${data._links.log.href}`;
-  //     node.console = `${baseUrl}/job/${jobName}/${buildNumber}/execution/node/${node.id}/log/?consoleFull`;
-  //     node.status = data.status;
-  //   }
-  // }
+  if (process.env.SUPPLEMENT_NODE_DATA) {
+    const nodes$ = from(nodes.filter(n => n._class === 'org.jenkinsci.plugins.workflow.cps.nodes.StepAtomNode'));
+
+    const responses = await nodes$
+      .pipe(
+        mergeMap(node => axios.get(getNodeUrl(baseUrl, jobName, buildNumber, node.id)), null, 5),
+        toArray()
+      )
+      .toPromise();
+
+    responses.forEach(resp => {
+      const data = resp.data;
+      const node = nodesById[data.id];
+
+      if (node) {
+        node.parameterDescription = (data.parameterDescription || '').replace(/#!\/usr\/local\/bin\/runbld\s+/, '');
+        node.durationMillis = data.durationMillis;
+        node.log = `${baseUrl}${data._links.log.href}`;
+      }
+    });
+  }
 
   return rootNode;
 };
