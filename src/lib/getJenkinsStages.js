@@ -21,6 +21,9 @@ const getRawStages = async (baseUrl, jobName, buildNumber) => {
 
 const getJenkinsStages = async (baseUrl, jobName, buildNumber) => {
   const nodes = await getRawStages(baseUrl, jobName, buildNumber);
+  if (!nodes || !nodes.length) {
+    return null;
+  }
 
   let rootNode = null;
 
@@ -82,7 +85,9 @@ const getJenkinsStages = async (baseUrl, jobName, buildNumber) => {
   const traverse = (prefix, node) => {
     const logUrl = node.log ? ` (logs: ${node.log})` : '';
 
-    console.log(`${prefix} ${node.displayName}${logUrl}`);
+    // const status = node.iconColor.replace('_anime', '') === 'blue' ? '✓' : '❌';
+
+    // console.log(`${prefix} ${node.running ? '[RUNNING]' : `[${status}]`} [${node.durationMillis / 60000}] ${node.displayName}`);
     node.children.forEach(n => traverse(prefix + '-', n));
   };
 
@@ -92,8 +97,13 @@ const getJenkinsStages = async (baseUrl, jobName, buildNumber) => {
 
   // We want to filter out nodes that we don't really care about
   const allowedStrs = ['Start of Pipeline', 'Branch:', 'Stage : Start', 'Stage:'];
+  const blockedStrs = ['Determine current directory', 'Print Message'];
+
   const allowedNode = node => {
-    return node._class === 'org.jenkinsci.plugins.workflow.cps.nodes.StepAtomNode' || !!allowedStrs.find(s => node.displayName.includes(s));
+    return (
+      !blockedStrs.find(s => node.displayName.includes(s)) &&
+      (node._class === 'org.jenkinsci.plugins.workflow.cps.nodes.StepAtomNode' || !!allowedStrs.find(s => node.displayName.includes(s)))
+    );
   };
 
   // Filter out nodes that we don't really care about, and bring their children up the graph
@@ -131,15 +141,21 @@ const getJenkinsStages = async (baseUrl, jobName, buildNumber) => {
 
     responses.forEach(resp => {
       const data = resp.data;
+      console.log(data);
       const node = nodesById[data.id];
 
       if (node) {
         node.parameterDescription = (data.parameterDescription || '').replace(/#!\/usr\/local\/bin\/runbld\s+/, '');
+        if (node.parameterDescription) {
+          node.displayName = node.parameterDescription;
+        }
         node.durationMillis = data.durationMillis;
         node.log = `${baseUrl}${data._links.log.href}`;
       }
     });
   }
+
+  traverse('', rootNode);
 
   return rootNode;
 };
