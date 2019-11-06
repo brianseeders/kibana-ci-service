@@ -48,7 +48,8 @@ const getJenkinsStages = async (baseUrl, jobName, buildNumber) => {
     });
 
     if (node._class === 'org.jenkinsci.plugins.workflow.cps.nodes.StepAtomNode') {
-      node.console = `${baseUrl}/job/${jobName}/${buildNumber}/execution/node/${node.id}/log/?consoleFull`;
+      node.console = `${baseUrl}/job/${jobName}/${buildNumber}/execution/node/${node.id}/log/`;
+      node.consoleFull = `${baseUrl}/job/${jobName}/${buildNumber}/execution/node/${node.id}/log/?consoleFull`;
     }
   });
 
