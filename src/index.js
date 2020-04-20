@@ -3,6 +3,7 @@ const cors = require('cors');
 
 const app = express();
 
+const esSnapshots = require('./lib/esSnapshots');
 const getJenkinsStages = require('./lib/getJenkinsStages');
 const getJobs = require('./lib/getJobs');
 const getTestReport = require('./lib/getTestReport');
@@ -52,6 +53,20 @@ app.get('/jobs', async (req, res, next) => {
     const data = await getJobs(BASE_URL);
     res.json(data);
   } catch (ex) {
+    console.error(ex);
+    next(ex, req, res);
+  }
+});
+
+app.get('/es-snapshots', async (req, res, next) => {
+  console.log(`Request for ${req.path}`);
+
+  const branches = ['master', '7.x', '7.7', '7.6', '6.8'];
+  try {
+    const data = await Promise.all(branches.map((branch) => esSnapshots.getSnapshotInfo(branch)));
+    res.json(data);
+  } catch (ex) {
+    console.error(ex);
     next(ex, req, res);
   }
 });
@@ -60,7 +75,7 @@ app.get('/health', (req, res) => {
   res.send();
 });
 
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   console.error(err.stack);
 
   res.status(500);
