@@ -17,6 +17,22 @@ const getManifest = async (version, getVerified = false) => {
   return { data: null };
 };
 
+const getBuilds = async (baseUrl) => {
+  const url = `${baseUrl}/job/elasticsearch+snapshots+verify/api/json/?tree=builds[building,description,displayName,duration,executor,id,number,result,timestamp,url,builtOnqueueId,artifacts]`;
+  const resp = await axios.get(url);
+
+  return resp.data.builds;
+};
+
+const getInfoForBranches = async (baseUrl, branches) => {
+  const [builds, ...branchData] = await Promise.all([getBuilds(baseUrl), ...branches.map(getSnapshotInfo)]);
+  for (const branch of branchData) {
+    branch.latestJenkinsBuild = builds.find((build) => build.displayName.match(`- ${branch.version}$`));
+  }
+
+  return branchData;
+};
+
 const getSnapshotInfo = async (branch) => {
   const { version } = await getKibanaPackage(branch);
   const [latest, latestVerified] = await Promise.all([
@@ -30,4 +46,5 @@ const getSnapshotInfo = async (branch) => {
 module.exports = {
   getKibanaPackage,
   getSnapshotInfo,
+  getInfoForBranches,
 };

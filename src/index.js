@@ -63,7 +63,7 @@ app.get('/es-snapshots', async (req, res, next) => {
 
   const branches = ['master', '7.x', '7.7', '7.6', '6.8'];
   try {
-    const data = await Promise.all(branches.map((branch) => esSnapshots.getSnapshotInfo(branch)));
+    const data = await esSnapshots.getInfoForBranches(BASE_URL, branches);
     res.json(data);
   } catch (ex) {
     console.error(ex);
