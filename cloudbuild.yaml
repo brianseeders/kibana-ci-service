@@ -1,18 +1,22 @@
 steps:
-  - name: 'gcr.io/kaniko-project/executor:latest'
-    args: ['--destination=gcr.io/$PROJECT_ID/kibana-ci-service:$COMMIT_SHA', '--cache=true']
-  - name: 'gcr.io/cloud-builders/gcloud'
+  - name: "gcr.io/kaniko-project/executor:v0.16.0"
     args:
       [
-        'beta',
-        'run',
-        'deploy',
-        'kibana-ci-service',
-        '--image',
-        'gcr.io/$PROJECT_ID/kibana-ci-service:$COMMIT_SHA',
-        '--region',
-        'us-central1',
-        '--platform',
-        'managed',
-        '--allow-unauthenticated',
+        "--destination=gcr.io/$PROJECT_ID/kibana-ci-service:$COMMIT_SHA",
+        "--cache=true",
+      ]
+  - name: "gcr.io/cloud-builders/gcloud"
+    args:
+      [
+        "beta",
+        "run",
+        "deploy",
+        "kibana-ci-service",
+        "--image",
+        "gcr.io/$PROJECT_ID/kibana-ci-service:$COMMIT_SHA",
+        "--region",
+        "us-central1",
+        "--platform",
+        "managed",
+        "--allow-unauthenticated",
       ]
