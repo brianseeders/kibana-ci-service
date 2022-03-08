@@ -61,7 +61,7 @@ app.get('/jobs', async (req, res, next) => {
 app.get('/es-snapshots', async (req, res, next) => {
   console.log(`Request for ${req.path}`);
 
-  const branches = ['main', '8.1', '8.0', '7.17', '7.16', '7.15', '6.8'];
+  const branches = ['main', '8.1', '8.0', '7.17'];
   try {
     const data = await esSnapshots.getInfoForBranches(BASE_URL, branches);
     res.json(data);
