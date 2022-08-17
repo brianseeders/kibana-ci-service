@@ -7,6 +7,7 @@ const esSnapshots = require('./lib/esSnapshots');
 const getJenkinsStages = require('./lib/getJenkinsStages');
 const getJobs = require('./lib/getJobs');
 const getTestReport = require('./lib/getTestReport');
+const { default: axios } = require('axios');
 
 const BASE_URL = process.env.BASE_URL || 'https://kibana-ci.elastic.co';
 const PORT = process.env.PORT || 8080;
@@ -61,7 +62,8 @@ app.get('/jobs', async (req, res, next) => {
 app.get('/es-snapshots', async (req, res, next) => {
   console.log(`Request for ${req.path}`);
 
-  const branches = ['main', '8.4', '8.3', '7.17'];
+  const { versions } = (await axios.get('https://raw.githubusercontent.com/elastic/kibana/main/versions.json')).data;
+  const branches = versions.map((v) => v.branch);
   try {
     const data = await esSnapshots.getInfoForBranches(BASE_URL, branches);
     res.json(data);
